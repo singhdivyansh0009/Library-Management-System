@@ -17,9 +17,17 @@ app.get('/', (req, res) => {
 
 // Import the routes
 import userRoutes from './routes/user.route.js';
-
+import reportRoutes from './routes/report.route.js';
+import adminRoutes from './routes/admin.route.js';
+import transactionRoutes from "./routes/transaction.route.js";
+import requestRoutes from "./routes/request.route.js";
 // Use the routes
 app.use('/api/users', userRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/transaction', transactionRoutes);
+app.use('/api/request', requestRoutes);
+
 
 connectDB() 
 .then(() => {
