@@ -1,16 +1,14 @@
 import express from "express";
-import { getAllUser,getAllMovie,getAllBook,getMemberUser,getActiveIssues,getPendingRequests,addBookIssue,getPendingIssueRequests,updateBookReturn } from "../controllers/report.controller.js";
-
+import { getAllUser,getAllMovie,getAllBook, getAllProducts, getMembers, getSingleBook, getAllBookCopies, getSingleBookCopies } from "../controllers/report.controller.js";
+import { verifyJWT } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
-router.get("/getAllUser", getAllUser);
-router.get("/getAllMovie", getAllMovie);
-router.get("/getAllBook", getAllBook);
-router.get("/getMemberUser", getMemberUser);
-router.get("/getActiveIssues", getActiveIssues);
-router.get("/getPendingRequests", getPendingRequests);
-router.post("/addBookIssue", addBookIssue);
-router.get("/getPendingIssueRequests", getPendingIssueRequests);
-router.post("/updateBookReturn", updateBookReturn);
-
+router.get("/users",verifyJWT, getAllUser);
+router.get("/movies",verifyJWT, getAllMovie);
+router.get("/books",verifyJWT, getAllBook);
+router.get("/single-book",verifyJWT, getSingleBook);
+router.get("/members",verifyJWT, getMembers);
+router.get("/products",verifyJWT,getAllProducts);
+router.get("/book-copies",verifyJWT,getAllBookCopies);
+router.get("/single-book-copies",verifyJWT,getSingleBookCopies);
 export default router;

@@ -1,10 +1,11 @@
 import styles from './Login.module.css'; 
 import { useState } from 'react';
 import axios from 'axios';
-import { Navigate, useNavigate } from 'react-router-dom';
+import {useNavigate } from 'react-router-dom';
 
-const Login = () => {
+const Login = ({handleLoginUser}) => {
    const [loginData, setLoginData] = useState({ userId: '', password: '' });
+   const [message,setMessage] = useState('');
    const navigate = useNavigate();
 
    const handleInputChange = (e) => {
@@ -12,14 +13,17 @@ const Login = () => {
       setLoginData({ ...loginData, [name]: value });
    };
 
-   const handleLogin = async () => {
-      try {
-         // const response = await axios.post('/api/login', loginData);
-         // console.log('Login successful:', response.data);
-         navigate('/home');
-      } catch (error) {
-         console.error('Login failed:', error);
-      }
+   const handleLogin = () => {
+         axios.post('http://localhost:8000/api/auth/login', loginData , {withCredentials:true})
+              .then((res) => { 
+               console.log(res.data.data);
+               handleLoginUser(res.data.data);
+               navigate('/home');
+            })
+            .catch((err) => { 
+               setMessage(err.response.data.message);
+               console.log(err)
+            });
    };
 
    return (
@@ -41,6 +45,7 @@ const Login = () => {
             value={loginData.password} 
             onChange={handleInputChange} 
          />
+         <p style={{color:"red"}}>{message}</p>
          <div className={styles.btnContainer}>
             <button className={styles.button}>Cancel</button>
             <button className={styles.button} onClick={handleLogin}>Login</button>

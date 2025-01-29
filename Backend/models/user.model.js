@@ -1,71 +1,59 @@
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
 // Define the schema for the user model
 const userSchema = new mongoose.Schema(
   {
-    name: { 
-        type: String, 
-        required: true
+    userId: {
+      type: String,
+      unique: true,
     },
-    contactNo: { 
-        type: String,
-        required: true, 
-        unique: true 
+    name: {
+      type: String,
+      required: true,
     },
-    amountPending: { 
-        type: Number,
-        default: 0 
+    status: {
+      type: Boolean,
+      default: true,
     },
-    email: { 
-        type: String,
-        required: true, 
-        unique: true 
+    isAdmin: {
+      type: Boolean,
+      default: false,
     },
-    password: { 
-        type: String, 
-        required: true 
+    password: {
+      type: String,
+      required: true,
     },
-    role: { 
-        type: String, 
-        enum: ["Admin", "Member"], 
-        default: "Member" 
-    },
-    membership: {
-        type: String,
-        enum: ["6 months", "1 year", "2 years"],
-        default: "6 months",
-    },
-    status: { 
-        type: String, 
-        enum: ["Active", "Inactive"], 
-        default: "Active" 
-    },
-    adadharCardNo: { 
-        type: String,
-        required: true, 
-        unique: true 
-    },
-    startDate: { 
-        type: Date, 
-        default: Date.now 
-    },
-    endDate: { 
-        type: Date, 
-        required: false 
+    refreshToken : {
+      type : String
     },
   },
-  { timeStamps: true }
+  { timestamps: true }
 );
 
-// Hash the password before saving the user model
-userSchema.pre("save", async function () {
-  if (this.isModified("password")) {
-    this.password = await bcrypt.hashSync(this.password, 10);
-  }
-});
-// Check if the password is correct
-userSchema.methods.isPasswordCorrect = async function (password) {
-  return await bcrypt.compareSync(password, this.password);
+// add pre save hook to generate userId with first 3 letters of name and current timestamp
+userSchema.pre("save", function (next) {
+    if (!this.userId) {
+      const prefix = this.name.slice(0, 3).toUpperCase(); 
+      const timestamp = Date.now().toString().slice(-4); 
+      this.userId = `${prefix}${timestamp}`;
+    }
+    next();
+  });
+
+userSchema.methods.generateAccessToken = function () {
+  return jwt.sign({ userId: this.userId }, 
+    process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+  });
 };
+
+userSchema.methods.generateRefreshToken = function () {
+  return jwt.sign({ userId: this.userId }, 
+    process.env.REFRESH_TOKEN_SECRET, {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+    });
+};
+
 // Export the model
 export const User = mongoose.model("User", userSchema);

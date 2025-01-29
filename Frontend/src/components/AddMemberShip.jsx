@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import styles from './AddMemberShip.module.css';  
 import { useNavigate } from 'react-router-dom';
+import { calculateEndDate } from '../utils';  // Import the utility function
+import axios from 'axios';
+
 const AddMemberShip = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         firstName: '',
-        lastName: '',
-        contactName: '',
-        contactAddress: '',
+        lastName:'',
+        contactNo: '',
+        contactAdd: '',
         aadharNo: '',
         startDate: '',
         endDate: '',
@@ -16,65 +19,151 @@ const AddMemberShip = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value,
-        });
+
+        // If membershipDuration or startDate changes, recalculate the endDate
+        if (name === 'membershipDuration' || name === 'startDate') {
+            // Calculate the new end date based on the new start date and duration
+            const updatedEndDate = calculateEndDate(
+                name === 'startDate' ? value : formData.startDate, 
+                name === 'membershipDuration' ? value : formData.membershipDuration
+            );
+            setFormData({
+                ...formData,
+                [name]: value,
+                endDate: updatedEndDate, 
+            });
+        } else {
+            setFormData({
+                ...formData,
+                [name]: value,
+            });
+        }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Form Submitted: ', formData);
+        const { membershipDuration, ...dataToSend } = formData;
+        axios.post("http://localhost:8000/api/admin/membership", 
+            dataToSend,
+            { headers: { 'Content-Type': 'application/json' } }
+            ).then(res => {
+                alert(res.data.message);
+                console.log('Membership added successfully:', res.data)
+            }).catch(err =>{
+                 alert(err.response.data.message);
+                 console.error('Failed to add membership:', err)
+            });
+        console.log('Form Submitted: ', dataToSend);
     };
 
     const handleCancel = () => {
-       navigate('/cancel');
+        navigate('/cancel');
     };
 
     return (
         <div className={styles.container}>
             <form onSubmit={handleSubmit}>
-            <h2 className={styles.title}>Add Membership</h2>
+                <h2 className={styles.title}>Add Membership</h2>
                 <div className={styles.inputGroup}>
                     <label>First Name:</label>
-                    <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} className={styles.input} />
+                    <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        className={styles.input}
+                    />
                 </div>
                 <div className={styles.inputGroup}>
                     <label>Last Name:</label>
-                    <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} className={styles.input} />
+                    <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        className={styles.input}
+                    />
                 </div>
                 <div className={styles.inputGroup}>
-                    <label>Contact Name:</label>
-                    <input type="text" name="contactName" value={formData.contactName} onChange={handleChange} className={styles.input} />
+                    <label>Contact No.:</label>
+                    <input
+                        type="text"
+                        name="contactNo"
+                        value={formData.contactNo}
+                        onChange={handleChange}
+                        className={styles.input}
+                    />
                 </div>
                 <div className={styles.inputGroup}>
                     <label>Contact Address:</label>
-                    <input type="text" name="contactAddress" value={formData.contactAddress} onChange={handleChange} className={styles.input} />
+                    <input
+                        type="text"
+                        name="contactAdd"
+                        value={formData.contactAdd}
+                        onChange={handleChange}
+                        className={styles.input}
+                    />
                 </div>
                 <div className={styles.inputGroup}>
                     <label>Aadhar No:</label>
-                    <input type="text" name="aadharNo" value={formData.aadharNo} onChange={handleChange} className={styles.input} />
+                    <input
+                        type="text"
+                        name="aadharNo"
+                        value={formData.aadharNo}
+                        onChange={handleChange}
+                        className={styles.input}
+                    />
                 </div>
                 <div className={styles.inputGroup}>
                     <label>Start Date:</label>
-                    <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className={styles.input} />
+                    <input
+                        type="date"
+                        name="startDate"
+                        value={formData.startDate}
+                        onChange={handleChange}
+                        className={styles.input}
+                    />
                 </div>
                 <div className={styles.inputGroup}>
                     <label>End Date:</label>
-                    <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} className={styles.input} />
+                    <input
+                        type="date"
+                        name="endDate"
+                        value={formData.endDate}
+                        readOnly
+                        className={styles.input}
+                    />
                 </div>
                 <div className={styles.inputGroup}>
                     <label>Membership Duration:</label>
                     <div>
-                        <input type="radio" name="membershipDuration" value="6 Months" checked={formData.membershipDuration === 'sixMonths'} onChange={handleChange} />
+                        <input
+                            type="radio"
+                            name="membershipDuration"
+                            value="6 Months"
+                            checked={formData.membershipDuration === '6 Months'}
+                            onChange={handleChange}
+                        />
                         <label>Six Months</label>
                     </div>
                     <div>
-                        <input type="radio" name="membershipDuration" value="1 Year" checked={formData.membershipDuration === 'oneYear'} onChange={handleChange} />
+                        <input
+                            type="radio"
+                            name="membershipDuration"
+                            value="1 Year"
+                            checked={formData.membershipDuration === '1 Year'}
+                            onChange={handleChange}
+                        />
                         <label>One Year</label>
                     </div>
                     <div>
-                        <input type="radio" name="membershipDuration" value="2 Years" checked={formData.membershipDuration === 'twoYears'} onChange={handleChange} />
+                        <input
+                            type="radio"
+                            name="membershipDuration"
+                            value="2 Years"
+                            checked={formData.membershipDuration === '2 Years'}
+                            onChange={handleChange}
+                        />
                         <label>Two Years</label>
                     </div>
                 </div>

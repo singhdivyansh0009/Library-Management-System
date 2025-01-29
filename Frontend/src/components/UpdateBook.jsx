@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
-import styles from './AddBook.module.css'; // Import the CSS module
-import axios from 'axios';
-const AddBook = () => {
+import React, { useState, useEffect } from 'react';
+import styles from './AddMemberShip.module.css'; // Ensure you have your styles in place
+
+const UpdateBook = () => {
     const [formData, setFormData] = useState({
-        type: 'book',
+        type: 'book', // Default value
         name: '',
-        procurementDate: '',
-        quantity: '',
-        category: '',
-        author: '',
-        cost:'',
+        serialNo: '',
+        status: 'Available', // Default status
+        date: ''
     });
 
     const handleChange = (e) => {
@@ -18,33 +16,31 @@ const AddBook = () => {
             ...formData,
             [name]: value
         });
+
+        // Automatically populate the Serial No when the Name changes
+        if (name === 'name') {
+            const autoSerialNo = generateSerialNo(value); // Generate serial number based on the name
+            setFormData((prevState) => ({
+                ...prevState,
+                serialNo: autoSerialNo
+            }));
+        }
+    };
+
+    const generateSerialNo = (name) => {
+        // Simple serial number generation logic based on book name
+        return name ? `${name.slice(0, 3).toUpperCase()}-001` : ''; // Just an example format
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const {type,...dataToSend} = formData;
-        if(type === 'book'){
-           axios.post("http://localhost:8000/api/admin/book",dataToSend,{withCredentials:true})
-             .then(res => {
-              console.log(res);
-              alert(res.data.message);
-           })
-           .catch(err => console.log(err));
-        }else{
-            axios.post("http://localhost:8000/api/admin/movie",dataToSend,{withCredentials:true})
-            .then(res => {
-             console.log(res);
-             alert(res.data.message);
-          })
-          .catch(err => console.log(err));
-        }
-
+        console.log(formData); // Here you can send this to your backend
     };
 
     return (
         <div className={styles.container}>
             <form onSubmit={handleSubmit}>
-            <h1 className={styles.title}>Add Book/Movie</h1>
+            <h1 className={styles.title}>Update Book</h1>
                 <div className={styles.inputGroup}>
                     <label>
                         <input
@@ -83,62 +79,42 @@ const AddBook = () => {
 
                 <div className={styles.inputGroup}>
                     <label>
-                        Date of Procurement:
+                        Serial No.:
+                        <input
+                            type="text"
+                            name="serialNo"
+                            value={formData.serialNo}
+                            onChange={handleChange}
+                            className={styles.input}
+                            readOnly
+                        />
+                    </label>
+                </div>
+
+                <div className={styles.inputGroup}>
+                    <label>
+                        Status:
+                        <select
+                            name="status"
+                            value={formData.status}
+                            onChange={handleChange}
+                            className={styles.input}
+                        >
+                            <option value="Available">Available</option>
+                            <option value="Unavailable">Unavailable</option>
+                            <option value="On Repair">On Repair</option>
+                            <option value="To Replace">To Replace</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div className={styles.inputGroup}>
+                    <label>
+                        Date:
                         <input
                             type="date"
-                            name="procurementDate"
+                            name="date"
                             value={formData.date}
-                            onChange={handleChange}
-                            className={styles.input}
-                        />
-                    </label>
-                </div>
-
-                <div className={styles.inputGroup}>
-                    <label>
-                        Copies:
-                        <input
-                            type="number"
-                            name="quantity"
-                            value={formData.copies}
-                            onChange={handleChange}
-                            className={styles.input}
-                        />
-                    </label>
-                </div>
-
-                <div className={styles.inputGroup}>
-                    <label>
-                        Category:
-                        <input
-                            type="text"
-                            name="category"
-                            value={formData.category}
-                            onChange={handleChange}
-                            className={styles.input}
-                        />
-                    </label>
-                </div>
-
-                <div className={styles.inputGroup}>
-                    <label>
-                        Author name:
-                        <input
-                            type="text"
-                            name="author"
-                            value={formData.author}
-                            onChange={handleChange}
-                            className={styles.input}
-                        />
-                    </label>
-                </div>
-                <div className={styles.inputGroup}>
-                    <label>
-                        Cost:
-                        <input
-                            type="text"
-                            name="cost"
-                            value={formData.cost}
                             onChange={handleChange}
                             className={styles.input}
                         />
@@ -154,4 +130,4 @@ const AddBook = () => {
     );
 };
 
-export default AddBook;
+export default UpdateBook;

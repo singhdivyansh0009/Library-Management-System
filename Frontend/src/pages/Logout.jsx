@@ -1,7 +1,7 @@
 const Logout = () => {
     return (
         <div>
-            <NavBar/>
+            {/* <NavBar/> */}
             <h1>Logout Successfull</h1>
         </div>
     );

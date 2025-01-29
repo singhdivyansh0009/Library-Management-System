@@ -1,11 +1,12 @@
 import { User } from "../models/user.model.js";
 import { Book } from "../models/book.model.js";
 import { Movie } from "../models/movie.model.js";
-import { Request } from "../models/requestissue.model.js";
-import { BookIssue } from "../models/overdue.model.js";
-import { Fine } from "../models/fine.model.js";
-import { Transaction } from "../models/transaction.model.js";
+import {Copies} from "../models/copies.model.js"
+import { Product } from "../models/product.model.js";
+import { Membership } from "../models/membership.model.js";
+import { MovieCopies } from "../models/movieCopies.js";
 
+// its not used in the app currently
 export const getAllUser = async (req, res) => {
     try
     {
@@ -19,12 +20,36 @@ export const getAllUser = async (req, res) => {
     }
 };
 
+// to get the all movie
 export const getAllMovie = async (req, res) => {
     try
     {
-        const movie = await Movie.find();
-        if(!movie) return res.status(404).json({ error: "Movie not found" });
-        res.status(200).json({ status: true,data:movie, message: "Movie found" });
+        const movieCopies = await MovieCopies.aggregate([
+            {
+                $lookup: {
+                    from: 'movies', // The name of the "Books" collection in MongoDB
+                    localField: 'movieId', // Field in the "Copies" collection
+                    foreignField: '_id', // Field in the "Books" collection
+                    as: 'movieDetails', // The name of the output array with joined data
+                },
+            },
+            {
+                $unwind: '$movieDetails', // Unwind to convert array to object for easier access
+            },
+            {
+                $project: {
+                    _id: 1,
+                    serialNumber: 1,
+                    status:1,
+                    'movieDetails.name': 1,
+                    'movieDetails.author': 1,
+                    'movieDetails.category': 1,
+                    'movieDetails.procurementDate': 1,
+                },
+            },
+        ]);
+        if(!movieCopies) return res.status(404).json({ error: "Movie not found" });
+        res.status(200).json({ status: true,data:movieCopies, message: "Movie found" });
     }
     catch(e)
     {
@@ -32,12 +57,15 @@ export const getAllMovie = async (req, res) => {
     }
 };
 
+// to get all books
 export const getAllBook = async (req, res) => {
     try
     {
         const book = await Book.find();
+            
+        
         if(!book) return res.status(404).json({ error: "Book not found" });
-        res.status(200).json({ status: true,data:book, message: "Book found" });
+        res.status(200).json({ status: true,data: book, message: "Book found" });
     }
     catch(e)
     {
@@ -45,29 +73,17 @@ export const getAllBook = async (req, res) => {
     }
 };
 
-export const getMemberUser = async (req, res) => {
+// to get all members
+export const getMembers = async (req, res) => {
     try
     {
-        const user = await User.find({role: "Member"});
-        if(!user) return res.status(404).json({ error: "User not found" });
-        res.status(200).json({ status: true,data:user, message: "Member user found" });
+        const members = await Membership.find();
+        if(!members) return res.status(404).json({ error: "Members not found" });
+        res.status(200).json({ status: true,data:members, message: "Members sent succesfully" });
     }
     catch(e)
     {
         return res.status(500).json({ error: "Error getting member user", details: e.message });
-    }
-};
-
-export const getActiveIssues = async (req, res) => {
-    try
-    {
-        const books = await Book.find({status: "Unavailable"});
-        if(!books) return res.status(404).json({ error: "Book not found" });
-        return res.status(200).json({ status: true,data:books, message: "Active issues found" });
-    }
-    catch(e)
-    {
-        return res.status(500).json({ error: "Error getting active issues", details: e.message });
     }
 };
 
@@ -99,116 +115,133 @@ export const getPendingRequests = async (req, res) => {
     }
 };
 
-export const addBookIssue = async (req, res) => {
-    try {
-        const { serialNo, nameOfBook, membershipId, dateOfIssue } = req.body;
-
-        // Validate input
-        if (!serialNo || !nameOfBook || !membershipId || !dateOfIssue) {
-            return res.status(400).json({
-                success: false,
-                message: "Serial No, Name of Book, Membership Id, and Date of Issue are required.",
-            });
-        }
-
-        const newBookIssue = new BookIssue({
-            serialNo,
-            nameOfBook,
-            membershipId,
-            dateOfIssue: new Date(dateOfIssue),
-        });
-
-        await newBookIssue.save();
-
-        return res.status(201).json({
-            success: true,
-            message: "Book issue added successfully",
-            bookIssue: newBookIssue,
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error adding book issue",
-            details: error.message,
-        });
-    }
-};
-
-export const getPendingIssueRequests = async (req, res) => {
-    try {
-        // Find all book issues where the dateOfReturn is not set (pending issues)
-        const pendingRequests = await BookIssue.find({
-            dateOfReturn: { $exists: false }
-        });
-
-        if (pendingRequests.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "No pending issue requests found."
-            });
-        }
-
+// get all products (tested)
+export const getAllProducts = async(req,res) =>{
+    try{
+        const products = await Product.find();
+        if(!products) return res.status(404).json(
+            {
+                success:false,
+                message:"Product not found"
+            }
+        )
         return res.status(200).json({
             success: true,
-            message: "Pending issue requests fetched successfully",
-            pendingRequests
+            message: "Products retrieved successfully",
+            products
         });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error fetching pending issue requests",
-            details: error.message
+    }catch(err){
+        return res.status(500).json({status: false, message:"Internal server error"});
+    }
+}
+
+export const getSingleBook = async(req,res)=>{
+    try
+    {
+        const {name,author,serialNumber} = req.query;
+        if(!name && !serialNumber)
+            return res.status.json({
+            success:false,
+            message:"Please provide book name or serial number"
         });
+        const book = await Book.findOne({
+            $or: [
+               {name},
+               {serialNumber}
+            ]
+        });
+        if(!book) return res.status(404).json({ error: "Book not found" });
+        res.status(200).json({ status: true,data:book, message: "Book found" });
+    }
+    catch(e)
+    {
+        return res.status(500).json({ error: "Error getting active book", details: e.message });
+    }
+}
+
+export const getAllBookCopies = async (req, res) => {
+    try
+    {
+        const bookCopies = await Copies.aggregate([
+            {
+                $lookup: {
+                    from: 'books', // The name of the "Books" collection in MongoDB
+                    localField: 'bookId', // Field in the "Copies" collection
+                    foreignField: '_id', // Field in the "Books" collection
+                    as: 'bookDetails', // The name of the output array with joined data
+                },
+            },
+            {
+                $unwind: '$bookDetails', // Unwind to convert array to object for easier access
+            },
+            {
+                $project: {
+                    _id: 1,
+                    serialNumber: 1,
+                    status:1,
+                    'bookDetails.name': 1,
+                    'bookDetails.author': 1,
+                    'bookDetails.category': 1,
+                    'bookDetails.procurementDate': 1,
+                },
+            },
+        ]);
+        
+        if(!bookCopies.length) return res.status(404).json({ error: "Book not found" });
+        res.status(200).json({ status: true,data: bookCopies, message: "Book found" });
+    }
+    catch(e)
+    {
+        return res.status(500).json({ error: "Error getting active book", details: e.message });
     }
 };
 
-const calculateFine = (dateOfIssue, dateOfReturn) => {
-    const issueDate = new Date(dateOfIssue);
-    const returnDate = new Date(dateOfReturn);
-    const timeDifference = returnDate - issueDate;
-    const dayDifference = timeDifference / (1000 * 3600 * 24);
-    
-    // Assuming a fine of 10 units per day late
-    const finePerDay = 10;
-    return dayDifference > 0 ? finePerDay * dayDifference : 0;
-};
-
-export const updateBookReturn = async (req, res) => {
-    try {
-        const { bookIssueId } = req.params;
-        const { dateOfReturn } = req.body;
-
-        // Validate input
-        if (!dateOfReturn) {
-            return res.status(400).json({
-                success: false,
-                message: "Date of Return is required.",
-            });
-        }
-
-        const bookIssue = await BookIssue.findById(bookIssueId);
-        if (!bookIssue) {
-            return res.status(404).json({ success: false, message: "Book issue not found" });
-        }
-
-        const fine = calculateFine(bookIssue.dateOfIssue, dateOfReturn);
-
-        // Update the book return details and calculate the fine
-        bookIssue.dateOfReturn = new Date(dateOfReturn);
-        bookIssue.fine = fine;
-
-        await bookIssue.save();
-
-        return res.status(200).json({
-            success: true,
-            message: "Book return processed successfully",
-            bookIssue,
+export const getSingleBookCopies = async(req,res)=>{
+    try
+    {
+        const {name,author,serialNumber} = req.query;
+        if(!name && !serialNumber)
+            return res.status.json({
+            success:false,
+            message:"Please provide book name or serial number"
         });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error processing book return",
-            details: error.message,
-        });
+        const bookCopies = await Copies.aggregate([
+            {
+                $lookup: {
+                    from: 'books', // The name of the "Books" collection in MongoDB
+                    localField: 'bookId', // Field in the "Copies" collection
+                    foreignField: '_id', // Field in the "Books" collection
+                    as: 'bookDetails', // The name of the output array with joined data
+                },
+            },
+            {
+                $unwind: '$bookDetails', // Unwind to convert array to object for easier access
+            },
+            {
+                $match: {
+                    'bookDetails.name': name,
+                    'bookDetails.author': author
+                },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    serialNumber: 1,
+                    status: 1,
+                    'bookDetails.name': 1,
+                    'bookDetails.author': 1,
+                    'bookDetails.category': 1,
+                    'bookDetails.procurementDate': 1,
+                },
+            },
+        ]);
+        
+        
+        if(!bookCopies.length) return res.status(404).json({ error: "Book not found" });
+        res.status(200).json({ status: true,data: bookCopies, message: "Book found" });
     }
-};
+    catch(e)
+    {
+        return res.status(500).json({ error: "Error getting active book", details: e.message });
+    }
+}

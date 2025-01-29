@@ -1,19 +1,35 @@
-import { useEffect } from "react";
-import NavBar from "../components/NavBar";
+import { useEffect, useState } from "react";
+import NavBar from "../components/Navbar";
 import styles from './Home.module.css';  
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-const Home = ({ isAdmin }) => {
-
+const Home = ({loginedUser}) => {
+    const [products,setProducts] = useState(null);
+    const navigate = useNavigate();
+    
+    console.log(loginedUser);
     useEffect(() => {
-        // Add your useEffect logic here if needed in the future
+        if(!loginedUser)
+            navigate('/');
+
+        axios.get('http://localhost:8000/api/report/products',{withCredentials:true})
+        .then(response => {
+            console.log(response.data);
+            setProducts(response.data.products);
+        }).catch(
+            error => {
+                console.log(error);
+            }
+        )
     }, []);
 
     return (
         <>
-        <NavBar />
+        <NavBar loginedUser = {loginedUser} />
         <div className={styles.container}>
             {
-                isAdmin ? <h2 className={styles.pageTitle}>Admin Homepage</h2> : <h1 className={styles.pageTitle}>Home Page</h1>
+                loginedUser?.isAdmin ? <h2 className={styles.pageTitle}>Admin Homepage</h2> : <h1 className={styles.pageTitle}>Home Page</h1>
             }
             <table className={styles.table}>
                 <thead>
@@ -23,23 +39,19 @@ const Home = ({ isAdmin }) => {
                         <th>Category</th>
                     </tr>
                 </thead>
-                <tbody>
+                {
+                products?.map((item)=>{
+                    return(
+                    <tbody>
                     <tr>
-                        <td>001</td>
-                        <td>010</td>
-                        <td>Electronics</td>
+                        <td>{item.start}</td>
+                        <td>{item.end}</td>
+                        <td>{item.category}</td>
                     </tr>
-                    <tr>
-                        <td>011</td>
-                        <td>020</td>
-                        <td>Clothing</td>
-                    </tr>
-                    <tr>
-                        <td>021</td>
-                        <td>030</td>
-                        <td>Home Appliances</td>
-                    </tr>
-                </tbody>
+                    </tbody>
+                    )
+                })    
+                }
             </table>
         </div>
       </>

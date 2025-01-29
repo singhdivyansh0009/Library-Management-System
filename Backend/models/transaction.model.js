@@ -1,34 +1,47 @@
 import mongoose from "mongoose";
 const transactionSchema = new mongoose.Schema({
-    user: { 
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', 
+    member: { 
+      type: String,
+      ref: 'memberships', 
       required: true 
     },
     book: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'Book', 
+      type: String, 
+      ref: 'copies', 
       required: true 
     },
     issueDate: { 
       type: Date, 
       required: true 
     },
-    returnDate: { 
-      type: Date, 
-      required: true 
+    returnDate: {
+      type: Date,
+      required:true
     },
-    fine: { 
-      type: Number, 
-      default: 0 
-    }, 
-    finePaid: { 
-      type: Boolean, 
-      default: false 
+    returnedOn : {
+      type: Date,
+      default: null
     },
-    remarks: { 
-      type: String 
+    fine: {
+      type: Number,
+      default:0
     },
-  }, { timestamps: true });
+    paidOn : {
+      type: Date,
+      default: null
+    },
+    fineRemark: {
+      type: String,
+      default: null
+    },
+    issueRemark: { 
+      type: String ,
+      default: null
+    },
+    returnRemark: {
+      type: String ,
+      default: null
+    }
+}, { timestamps: true });
   
 export const Transaction = mongoose.model('Transaction', transactionSchema);
